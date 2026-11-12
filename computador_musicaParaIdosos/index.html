@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Meu Instrumento</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f3eee4;--panel:#fbf8f2;--line:#c9bfab;--text:#2a2622;--accent:#8a4b2d;--muted:#645b50}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#232120;--panel:#2d2a28;--line:#4d4741;--text:#f0ebe3;--accent:#dba577;--muted:#b8ae9f}}
+:root[data-theme="dark"]{--bg:#232120;--panel:#2d2a28;--line:#4d4741;--text:#f0ebe3;--accent:#dba577;--muted:#b8ae9f}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:18px;min-height:100vh}
+.wrap{max-width:720px;margin:0 auto;padding:24px 16px}
+h1{font-family:Georgia,"Times New Roman",serif;font-size:clamp(1.9rem,7vw,2.8rem);margin:0 0 6px;font-weight:700}
+.sub{color:var(--muted);font-size:clamp(1.05rem,4vw,1.3rem);margin:0 0 24px}
+label{display:block;font-weight:600;font-size:1.1rem;margin-bottom:8px}
+select{width:100%;font:inherit;font-size:1.4rem;padding:16px;border-radius:12px;border:2px solid var(--line);background:var(--panel);color:var(--text);margin-bottom:12px}
+select:focus-visible,button:focus-visible{outline:4px solid var(--text);outline-offset:2px}
+.tools{display:none;margin-bottom:12px}
+.tools.on{display:block}
+.edit{font:inherit;font-weight:600;font-size:1.1rem;padding:14px 18px;border-radius:12px;border:2px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer;width:100%}
+.edit[aria-pressed="true"]{background:var(--accent);color:var(--bg)}
+.hint{color:var(--muted);font-size:1.05rem;margin:8px 0 0;min-height:1.4em}
+.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:clamp(8px,2vw,14px);margin-top:16px}
+.pad{position:relative;aspect-ratio:1;border:0;border-radius:14px;background:var(--c);color:#fff;font:inherit;font-weight:700;font-size:clamp(.62rem,2.6vw,1.2rem);line-height:1.15;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;box-shadow:0 5px 0 rgba(0,0,0,.28);transition:transform .06s,box-shadow .06s,filter .06s;padding:4px;user-select:none}
+.pad.hit{transform:translateY(4px);box-shadow:0 1px 0 rgba(0,0,0,.28);filter:brightness(1.18)}
+.pad .dot{position:absolute;top:8px;right:8px;width:12px;height:12px;border-radius:50%;background:#fff;display:none}
+.pad.has .dot{display:block}
+.edit-on .pad{outline:3px dashed #fff;outline-offset:-6px}
+.aviso{background:var(--panel);border:2px dashed var(--accent);border-radius:12px;padding:14px;margin:0 0 20px;font-weight:600}
+.aviso[hidden]{display:none}
+.topo{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px;color:var(--muted);font-size:1rem}
+.topo[hidden]{display:none}
+.link{font:inherit;font-weight:600;background:none;border:2px solid var(--line);border-radius:10px;padding:10px 14px;color:var(--text);cursor:pointer}
+.bt{margin-bottom:12px}
+.ex{margin:0 0 12px}
+.ex-painel{border:2px solid var(--line);background:var(--panel);border-radius:12px;padding:14px;margin-top:10px}
+.ex-painel .edit{margin-bottom:8px}
+.ex-msg{font-size:1.4rem;font-weight:700;margin:10px 0 4px;min-height:1.4em}
+.ex-msg.ok{color:var(--accent)}
+.ex-acoes{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.chk{display:flex;align-items:center;gap:10px;font-weight:400;font-size:1rem;color:var(--muted);margin:8px 0 0}
+.chk input{width:22px;height:22px}
+.pad.guia{outline:6px solid var(--text);outline-offset:3px;filter:brightness(1.4);transform:scale(1.06);z-index:1}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="topo" id="topo" hidden><span id="quem"></span><button class="link" id="sair" type="button"></button></div>
+<h1>Toque e divirta-se</h1>
+<p class="sub">Toque nos botões para tocar</p>
+<p class="aviso" id="aviso">Toque em qualquer lugar desta página uma vez para ativar o som.</p>
+
+<label for="inst">Escolha o instrumento</label>
+<select id="inst" aria-label="Escolha o instrumento">
+  <option value="piano">Piano</option>
+  <option value="bateria">Bateria</option>
+  <option value="flauta">Flauta</option>
+  <option value="custom">Personalizado</option>
+</select>
+<div class="bt">
+  <button class="edit" id="btn-bt" type="button">Conectar o painel (Bluetooth)</button>
+  <p class="hint" id="bt-estado"></p>
+</div>
+
+<div class="tools" id="tools">
+  <button class="edit" id="edit" aria-pressed="false">Escolher meus sons</button>
+  <p class="hint" id="hint"></p>
+</div>
+
+<div class="ex" id="ex">
+  <button class="edit" id="btn-ex" type="button">Exercícios</button>
+  <div class="ex-painel" id="ex-painel" hidden>
+    <div id="ex-escolha">
+      <button class="edit" data-ex="0" type="button">Exercício 1: subindo a escala</button>
+      <button class="edit" data-ex="1" type="button">Exercício 2: Brilha, brilha, estrelinha</button>
+      <button class="edit" data-ex="2" type="button">Exercício 3: pulando notas</button>
+      <button class="edit" data-ex="3" type="button">Exercício 4: Ode à Alegria</button>
+    </div>
+    <p class="ex-msg" id="ex-msg" aria-live="polite"></p>
+    <p class="hint" id="ex-prog"></p>
+    <div class="ex-acoes" id="ex-acoes" hidden>
+      <button class="edit" id="ex-ouvir" type="button">Ouvir de novo</button>
+      <button class="edit" id="ex-parar" type="button">Parar</button>
+    </div>
+    <label class="chk"><input type="checkbox" id="ex-voz" checked> Falar as mensagens em voz alta</label>
+  </div>
+</div>
+<div class="grid" id="grid"></div>
+<input type="file" id="file" accept="audio/*" hidden>
+</div>
+
+<script>
+const COLORS=["#b5523b","#b0701a","#5f7f3a","#2f7f7a","#6a5a8c"]; // uma cor por linha
+const NOTES_PT=["Dó","Ré","Mi","Fá","Sol","Lá","Si"];
+const N=25;
+const SEMI=Array.from({length:N},(_,n)=>[0,2,4,5,7,9,11][n%7]+12*Math.floor(n/7));
+const freqOf=i=>130.81*Math.pow(2,SEMI[i]/12);
+const DRUMS=["Bumbo","Caixa","Chimbal","Chimbal aberto","Tom agudo","Tom médio","Tom grave","Palmas","Prato","Condução","Aro","Sino","Conga","Bongô","Triângulo","Chocalho",
+             "Surdo","Clave","Bloco","Agogô","Tamborim","Reco-reco","Pandeiro","Prato curto","Apito"];
+
+let ctx=null,noiseBuf=null;
+function ac(){
+  if(!ctx){ctx=new (window.AudioContext||window.webkitAudioContext)();
+    const n=ctx.sampleRate*2;noiseBuf=ctx.createBuffer(1,n,ctx.sampleRate);
+    const d=noiseBuf.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1;}
+  if(ctx.state==="suspended")ctx.resume();
+  return ctx;
+}
+function env(g,t,a,peak,dec){g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(peak,t+a);g.gain.exponentialRampToValueAtTime(0.0001,t+a+dec);}
+function tone(type,f,t,a,peak,dec,dest){
+  const o=ctx.createOscillator(),g=ctx.createGain();o.type=type;o.frequency.setValueAtTime(f,t);
+  env(g,t,a,peak,dec);o.connect(g);g.connect(dest||ctx.destination);o.start(t);o.stop(t+a+dec+.05);return o;
+}
+function noise(t,dur,peak,ftype,ff,q){
+  const s=ctx.createBufferSource();s.buffer=noiseBuf;
+  const f=ctx.createBiquadFilter();f.type=ftype;f.frequency.value=ff;if(q)f.Q.value=q;
+  const g=ctx.createGain();env(g,t,.002,peak,dur);
+  s.connect(f);f.connect(g);g.connect(ctx.destination);s.start(t);s.stop(t+dur+.05);
+}
+function sweep(f0,f1,t,dur,peak){
+  const o=ctx.createOscillator(),g=ctx.createGain();o.type="sine";
+  o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(f1,t+dur);
+  env(g,t,.003,peak,dur);o.connect(g);g.connect(ctx.destination);o.start(t);o.stop(t+dur+.05);
+}
+
+function piano(i){const t=ctx.currentTime,f=freqOf(i);
+  tone("triangle",f,t,.005,.5,1.6);tone("sine",f*2,t,.005,.18,.9);tone("sine",f*3,t,.005,.06,.5);}
+function flute(i){const t=ctx.currentTime,f=freqOf(i)*2,dur=.9;
+  const o=ctx.createOscillator(),g=ctx.createGain(),lfo=ctx.createOscillator(),lg=ctx.createGain();
+  o.type="sine";o.frequency.value=f;lfo.frequency.value=5.2;lg.gain.value=f*.012;lfo.connect(lg);lg.connect(o.frequency);
+  g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(.4,t+.09);g.gain.setValueAtTime(.4,t+dur*.6);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  o.connect(g);g.connect(ctx.destination);o.start(t);lfo.start(t);o.stop(t+dur+.05);lfo.stop(t+dur+.05);
+  tone("sine",f*2,t,.09,.05,dur-.1);noise(t,dur*.7,.05,"bandpass",f*2,3);}
+function drum(i){const t=ctx.currentTime;
+  switch(i){
+    case 0:sweep(160,40,t,.35,1);break;
+    case 1:noise(t,.2,.7,"highpass",1500);tone("triangle",190,t,.002,.5,.12);break;
+    case 2:noise(t,.06,.5,"highpass",7000);break;
+    case 3:noise(t,.45,.45,"highpass",7000);break;
+    case 4:sweep(300,160,t,.3,.9);break;
+    case 5:sweep(220,110,t,.35,.9);break;
+    case 6:sweep(150,70,t,.45,1);break;
+    case 7:[0,.012,.024].forEach(d=>noise(t+d,.05,.5,"bandpass",1200,1.2));noise(t+.036,.18,.5,"bandpass",1200,1.2);break;
+    case 8:noise(t,1.4,.45,"highpass",5000);break;
+    case 9:noise(t,.5,.3,"bandpass",9000,2);tone("square",4200,t,.002,.04,.3);break;
+    case 10:tone("square",820,t,.001,.3,.04);noise(t,.04,.3,"bandpass",2000);break;
+    case 11:tone("square",540,t,.002,.2,.5);tone("square",800,t,.002,.2,.5);break;
+    case 12:sweep(420,330,t,.28,.8);break;
+    case 13:sweep(520,430,t,.18,.8);break;
+    case 14:tone("sine",3400,t,.002,.3,1.6);tone("sine",5100,t,.002,.15,1.2);break;
+    case 15:noise(t,.14,.4,"highpass",6000);noise(t+.07,.14,.4,"highpass",6000);break;
+    case 16:sweep(110,50,t,.55,1);break;
+    case 17:tone("sine",2500,t,.001,.5,.12);break;
+    case 18:tone("triangle",900,t,.001,.5,.1);tone("sine",1350,t,.001,.25,.08);break;
+    case 19:tone("sine",700,t,.002,.35,.45);tone("sine",1050,t,.002,.3,.45);break;
+    case 20:noise(t,.08,.5,"highpass",2500);tone("triangle",600,t,.002,.4,.1);break;
+    case 21:[0,.04,.08,.12].forEach(d=>noise(t+d,.03,.4,"bandpass",4000,2));break;
+    case 22:noise(t,.12,.5,"bandpass",3500,1.5);tone("sine",6000,t,.002,.2,.3);break;
+    case 23:noise(t,.35,.5,"highpass",6000);break;
+    case 24:tone("sine",2300,t,.01,.35,.35);break;
+  }}
+
+const customBuf=Array(N).fill(null);
+function custom(i){const t=ctx.currentTime;
+  if(customBuf[i]){const s=ctx.createBufferSource();s.buffer=customBuf[i];s.connect(ctx.destination);s.start(t);}
+  else tone("sine",freqOf(i),t,.01,.45,.9);}
+
+const LABELS={
+  piano:i=>NOTES_PT[i%7],flauta:i=>NOTES_PT[i%7],bateria:i=>DRUMS[i],custom:i=>"Som "+(i+1)};
+const PLAY={piano,flauta:flute,bateria:drum,custom};
+
+const grid=document.getElementById("grid"),sel=document.getElementById("inst"),
+  tools=document.getElementById("tools"),editBtn=document.getElementById("edit"),
+  hint=document.getElementById("hint"),file=document.getElementById("file");
+let editing=false,pending=-1;
+const pads=[];
+for(let i=0;i<N;i++){
+  const b=document.createElement("button");b.className="pad";b.style.setProperty("--c",COLORS[Math.floor(i/5)]);
+  b.innerHTML='<span class="dot"></span><span class="lbl"></span>';
+  b.addEventListener("pointerdown",e=>{e.preventDefault();press(i);});
+  b.addEventListener("keydown",e=>{if((e.key===" "||e.key==="Enter")&&!e.repeat){e.preventDefault();press(i);}});
+  grid.appendChild(b);pads.push(b);
+}
+function labels(){const v=sel.value;pads.forEach((b,i)=>{b.querySelector(".lbl").textContent=LABELS[v](i);b.classList.toggle("has",v==="custom"&&!!customBuf[i]);});}
+function flash(i){const b=pads[i];b.classList.add("hit");setTimeout(()=>b.classList.remove("hit"),140);}
+function press(i){
+  ac();
+  if(sel.value==="custom"&&editing){pending=i;file.value="";file.click();return;}
+  flash(i);PLAY[sel.value](i);if(exEntrada)exEntrada(i);
+}
+sel.addEventListener("change",()=>{
+  const c=sel.value==="custom";tools.classList.toggle("on",c);
+  if(!c){editing=false;sync();}
+  labels();hint.textContent=c?"Os botões já tocam notas. Quer usar suas próprias músicas? Toque em “Escolher meus sons”.":"";
+});
+function sync(){editBtn.setAttribute("aria-pressed",editing);grid.classList.toggle("edit-on",editing);
+  editBtn.textContent=editing?"Terminei de escolher":"Escolher meus sons";}
+editBtn.addEventListener("click",()=>{editing=!editing;sync();
+  hint.textContent=editing?"Agora toque em um botão e escolha um arquivo de som do seu aparelho.":"Pronto! Toque nos botões para ouvir.";});
+file.addEventListener("change",async()=>{
+  const f=file.files[0];if(!f||pending<0)return;
+  try{customBuf[pending]=await ac().decodeAudioData(await f.arrayBuffer());
+    hint.textContent="Som guardado no botão "+(pending+1)+"! Escolha outro ou toque em “Terminei”.";}
+  catch(e){hint.textContent="Não consegui abrir esse arquivo. Tente outro som (mp3 ou wav).";}
+  labels();
+});
+const aviso=document.getElementById("aviso");
+const ativar=()=>{ac();aviso.hidden=true;};
+["pointerdown","keydown"].forEach(ev=>addEventListener(ev,ativar,{once:true}));
+// Botões físicos do ESP32 chegam pelo servidor local
+if(location.protocol.startsWith("http")&&window.EventSource){
+  new EventSource("/eventos").onmessage=e=>{
+    const i=parseInt(e.data,10);
+    if(i>=0&&i<N){ac();flash(i);PLAY[sel.value](i);if(exEntrada)exEntrada(i);}
+  };
+}
+if(location.protocol.startsWith("http")){
+  fetch("/api/eu").then(r=>r.json()).then(d=>{
+    document.getElementById("quem").textContent=d.usuario?"Olá, "+d.usuario:"Você está como visitante";
+    const sair=document.getElementById("sair");
+    sair.textContent=d.usuario?"Sair":"Entrar ou criar conta";
+    sair.onclick=()=>fetch("/api/logout",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"}).finally(()=>{location.href="/";});
+    document.getElementById("topo").hidden=false;
+  }).catch(()=>{});
+}
+// ---- Painel físico por Bluetooth (Web Bluetooth: Chrome ou Edge) ----
+const BT_SERVICO="9a1c0001-5b7e-4c3a-9d2e-6f1a7b3c8d10";
+const BT_CARACT ="9a1c0002-5b7e-4c3a-9d2e-6f1a7b3c8d10";
+const BT_LEDS   ="9a1c0003-5b7e-4c3a-9d2e-6f1a7b3c8d10";
+const btBotao=document.getElementById("btn-bt"),btEstado=document.getElementById("bt-estado");
+let btDisp=null,btManual=false,btLeds=null,btFila=Promise.resolve();
+const btMsg=t=>{btEstado.textContent=t;};
+function btRotulo(){btBotao.textContent=(btDisp&&btDisp.gatt.connected)?"Desconectar o painel":"Conectar o painel (Bluetooth)";}
+async function btLigar(){
+  const srv=await btDisp.gatt.connect();
+  const svc=await srv.getPrimaryService(BT_SERVICO);
+  const car=await svc.getCharacteristic(BT_CARACT);
+  try{btLeds=await svc.getCharacteristic(BT_LEDS);}catch(e){btLeds=null;}
+  car.addEventListener("characteristicvaluechanged",e=>{
+    const i=e.target.value.getUint8(0);
+    if(i<N){ac();flash(i);PLAY[sel.value](i);if(exEntrada)exEntrada(i);}
+  });
+  await car.startNotifications();
+  btMsg("Painel conectado. Pode apertar os botões!");btRotulo();
+}
+async function btCaiu(){
+  btLeds=null;btRotulo();
+  if(btManual){btManual=false;btMsg("Painel desconectado.");return;}
+  btMsg("A conexão caiu. Tentando de novo...");
+  for(let t=0;t<5;t++){
+    await new Promise(r=>setTimeout(r,2000));
+    try{await btLigar();return;}catch(e){}
+  }
+  btMsg("Não consegui reconectar. Aperte o botão para conectar de novo.");
+}
+if(!navigator.bluetooth){
+  btBotao.disabled=true;
+  btMsg("Para usar o painel por Bluetooth, abra esta página no Chrome ou no Edge (endereço localhost).");
+}
+btBotao.onclick=async()=>{
+  ac();
+  if(btDisp&&btDisp.gatt.connected){btManual=true;btDisp.gatt.disconnect();return;}
+  try{
+    btMsg("Procurando o painel... escolha-o na janela que abrir.");
+    btDisp=await navigator.bluetooth.requestDevice({filters:[{services:[BT_SERVICO]}]});
+    btDisp.addEventListener("gattserverdisconnected",btCaiu);
+    await btLigar();
+  }catch(e){
+    btMsg(e.name==="NotFoundError"?"Nenhum painel escolhido.":"Não consegui conectar. Ligue o painel, deixe-o perto e tente de novo.");
+  }
+};
+// ---- Exercícios de sequência (piano) ----
+const el=id=>document.getElementById(id);
+const EXERCICIOS=[{notas:[0,1,2,3,4]},{notas:[0,0,4,4,5,5,4]},{notas:[0,2,4,7,9,7,4,2,0]},{notas:[2,2,3,4,4,3,2,1,0,0,1,2]}];
+const exBloco=el("ex"),exAbrir=el("btn-ex"),exPainel=el("ex-painel"),exEscolha=el("ex-escolha"),
+      exMsg=el("ex-msg"),exProg=el("ex-prog"),exAcoes=el("ex-acoes"),exVoz=el("ex-voz");
+let exToken=0,exEntrada=null,exResolve=null,exAtual=0;
+const dormir=ms=>new Promise(r=>setTimeout(r,ms));
+function ledEnviar(v){   // acende o LED do botão v no painel (255 = apagar)
+  if(!btLeds)return;
+  const dados=new Uint8Array([v]);
+  btFila=btFila.then(()=>btLeds.writeValueWithoutResponse?btLeds.writeValueWithoutResponse(dados):btLeds.writeValue(dados)).catch(()=>{});
+}
+function luz(i,on){pads[i].classList.toggle("guia",on);ledEnviar(on?i:255);}
+function falar(t,ok){
+  exMsg.textContent=t;exMsg.classList.toggle("ok",!!ok);
+  if(exVoz.checked&&"speechSynthesis" in window){
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(t);u.lang="pt-BR";u.rate=.9;speechSynthesis.speak(u);
+  }
+}
+function exLimpar(){
+  exToken++;exEntrada=null;
+  if(exResolve){exResolve("cancelado");exResolve=null;}
+  pads.forEach(p=>p.classList.remove("guia"));ledEnviar(255);
+  if("speechSynthesis" in window)speechSynthesis.cancel();
+}
+function exParar(){
+  exLimpar();exMsg.textContent="";exMsg.classList.remove("ok");exProg.textContent="";
+  exAcoes.hidden=true;exEscolha.hidden=false;
+}
+async function comemorar(token){
+  for(let k=0;k<N;k++){
+    if(token!==exToken)return;
+    luz(k,true);await dormir(70);luz(k,false);
+  }
+}
+async function exIniciar(id){
+  exLimpar();exAtual=id;ac();
+  const seq=EXERCICIOS[id].notas,token=exToken;
+  exEscolha.hidden=true;exAcoes.hidden=false;
+  while(true){
+    exProg.textContent="";
+    falar("Olhe com atenção e escute a sequência.");
+    await dormir(1800);
+    for(const i of seq){
+      if(token!==exToken)return;
+      luz(i,true);piano(i);
+      await dormir(750);
+      luz(i,false);
+      await dormir(250);
+    }
+    if(token!==exToken)return;
+    falar("Sua vez! Repita a sequência.");
+    exProg.textContent="Notas certas: 0 de "+seq.length;
+    let pos=0;
+    const r=await new Promise(res=>{
+      exResolve=res;
+      exEntrada=i=>{
+        if(i===seq[pos]){
+          pos++;exProg.textContent="Notas certas: "+pos+" de "+seq.length;
+          if(pos===seq.length){exEntrada=null;res("ok");}
+        }else{exEntrada=null;res("erro");}
+      };
+    });
+    exResolve=null;
+    if(token!==exToken||r==="cancelado")return;
+    if(r==="ok"){
+      falar("Parabéns! Você acertou a sequência toda!",true);
+      exAcoes.hidden=true;exEscolha.hidden=false;
+      await comemorar(token);
+      return;
+    }
+    falar("Quase! Vamos tentar de novo.");
+    await dormir(2500);
+  }
+}
+exAbrir.onclick=()=>{
+  const abrir=exPainel.hidden;
+  exParar();exPainel.hidden=!abrir;
+  exAbrir.textContent=abrir?"Fechar exercícios":"Exercícios";
+};
+document.querySelectorAll("[data-ex]").forEach(b=>b.onclick=()=>exIniciar(+b.dataset.ex));
+el("ex-ouvir").onclick=()=>exIniciar(exAtual);
+el("ex-parar").onclick=exParar;
+function exVisivel(){   // exercícios só aparecem com o piano
+  const piano_=sel.value==="piano";
+  exBloco.hidden=!piano_;
+  if(!piano_){exParar();exPainel.hidden=true;exAbrir.textContent="Exercícios";}
+}
+sel.addEventListener("change",exVisivel);exVisivel();
+const KEYS="12345qwertasdfgzxcvb67890";
+addEventListener("keydown",e=>{
+  if(e.repeat||e.target.tagName==="SELECT"||e.target.tagName==="BUTTON")return;
+  const i=KEYS.indexOf(e.key.toLowerCase());if(i>=0)press(i);
+});
+labels();
+</script>
+</body>
+</html>
